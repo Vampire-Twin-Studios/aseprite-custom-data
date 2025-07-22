@@ -91,10 +91,23 @@ function init(plugin)
 
       -- Key-Value pairs data
       local kvRows = loadPredefinedRows()
+      local lastDialogBounds = nil
+      local dlg = nil
       local function showDialog()
-        local dlg = Dialog{
+        if dlg then
+          lastDialogBounds = Rectangle(
+            dlg.bounds.x,
+            dlg.bounds.y,
+            dlg.bounds.width,
+            dlg.bounds.height
+          )
+          dlg:close()
+        end
+        dlg = Dialog{
           title = "Custom Tag Data",
-          onclose = function() app.refresh() end
+          onclose = function()
+            app.refresh()
+          end
         }
         dlg:combobox{
           id = "tag",
@@ -118,13 +131,11 @@ function init(plugin)
             kvRows[i].value = dlg.data["value"..i]
           end }
           dlg:button{ text = "Remove", onclick = function()
-            dlg:close() -- Close previous dialog
             table.remove(kvRows, i)
             showDialog()
           end }
         end
         dlg:button{ text = "Add Row", onclick = function()
-          dlg:close() -- Close previous dialog
           table.insert(kvRows, { key = "", value = "" })
           showDialog()
         end }
@@ -139,10 +150,17 @@ function init(plugin)
           app.alert("Data saved!")
         end }
         dlg:label{ id = "info", label = "", text = string.rep(" ", 25), color = Color{ r=0, g=180, b=0 } }
+        if (lastDialogBounds) then
+          dlg.bounds = Rectangle(
+            lastDialogBounds.x,
+            lastDialogBounds.y,
+            dlg.bounds.width,
+            dlg.bounds.height
+          )
+        end
         dlg:show()
       end
       showDialog()
-      clearPreviewLayer(sprite)
     end
   }
 
