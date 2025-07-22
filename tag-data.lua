@@ -112,11 +112,13 @@ function init(plugin)
             kvRows[i].value = dlg.data["value"..i]
           end }
           dlg:button{ text = "Remove", onclick = function()
+            dlg:close() -- Close previous dialog
             table.remove(kvRows, i)
             showDialog()
           end }
         end
         dlg:button{ text = "Add Row", onclick = function()
+          dlg:close() -- Close previous dialog
           table.insert(kvRows, { key = "", value = "" })
           showDialog()
         end }
