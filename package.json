@@ -1,0 +1,18 @@
+{
+  "name": "tag-data",
+  "displayName": "Tag Data",
+  "description": "A simple Aseprite plugin that lets you define custom data for tags.",
+  "version": "1.0.0",
+  "author": { "name": "Shervin Mortazavi",
+              "email": "shervin.mortazavi@outlook.com",
+              "url": "https://github.com/WolvenBard" },
+  "contributors": [ ],
+  "publisher": "WolvenBard",
+  "license": "CC-BY-4.0",
+  "categories": [ "Scripts" ],
+  "contributes": {
+    "scripts": [
+        { "path": "./tag-data.lua" }
+    ]
+  }
+}
