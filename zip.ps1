@@ -1,6 +1,6 @@
 # Define filenames
 $zipName = "tag-data.zip"
-$filesToZip = @("package.json", "tag-data.lua")
+$filesToZip = @("package.json", "tag-data.lua", "config.lua", "README.md")
 
 # Ensure we’re in the correct folder
 $scriptDir = Split-Path -Parent $MyInvocation.MyCommand.Definition

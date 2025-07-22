@@ -20,6 +20,12 @@ function setProperty(object, property, value)
   object.properties(PLUGIN_KEY)[property] = value
 end
 
+local config = require("config")
+-- Load predefined keys from config file
+local function loadPredefinedRows()
+  return config or { { key = "", value = "" } }
+end
+
 --=============================================================================
 -- INIT
 --=============================================================================
@@ -84,7 +90,7 @@ function init(plugin)
       }
 
       -- Key-Value pairs data
-      local kvRows = { { key = "", value = "" } }
+      local kvRows = loadPredefinedRows()
       local function showDialog()
         local dlg = Dialog{
           title = "Custom Tag Data",
