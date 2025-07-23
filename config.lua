@@ -1,7 +1,9 @@
 -- custom-tag-config.lua
 -- List of predefined keys for the Custom Tag Data dialog
 return {
-  { key = "Author", value = "" },
-  { key = "Description", value = "" },
-  { key = "Category", value = "" }
+  { key = "Author", type = "string", value = "" },
+  { key = "Description", type = "string", value = "" },
+  { key = "Category", type = "dropdown", value = "Main", dropdownOptions = { "Main", "Extra", "Other" } },
+  { key = "Version", type = "int", value = 1 },
+  { key = "Scale", type = "float", value = 1.0 }
 }

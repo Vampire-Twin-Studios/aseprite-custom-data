@@ -7,7 +7,7 @@
 --=============================================================================
 
 local PLUGIN_KEY = ""
-local DEBUG = false
+local DEBUG = true
 local function debugPrint(...)
   if DEBUG then print(...) end
 end
@@ -20,7 +20,14 @@ function setProperty(object, property, value)
   object.properties(PLUGIN_KEY)[property] = value
 end
 
-local config = require("config")
+local config = dofile("config.lua")
+if DEBUG then
+  local debugInfo = "Config:\n"
+  for i, row in ipairs(config) do
+    debugInfo = debugInfo .. string.format("Row %d: key=%s, value=%s\n", i, row.key, tostring(row.value))
+  end
+  app.alert(debugInfo)
+end
 -- Load predefined keys from config file
 local function loadPredefinedRows()
   return config or { { key = "", value = "" } }
@@ -91,6 +98,14 @@ function init(plugin)
 
       -- Key-Value pairs data
       local kvRows = loadPredefinedRows()
+      -- debug alert values of kvRows
+      if DEBUG then
+        local debugInfo = "KV Rows:\n"
+        for i, row in ipairs(kvRows) do
+          debugInfo = debugInfo .. string.format("Row %d: key=%s, value=%s\n", i, row.key, tostring(row.value))
+        end
+        app.alert(debugInfo)
+      end
       local lastDialogBounds = nil
       local dlg = nil
       local function showDialog()
@@ -124,12 +139,54 @@ function init(plugin)
           end
         }
         for i, row in ipairs(kvRows) do
-          dlg:entry{ id = "key"..i, label = "Key", text = row.key or "", onchange = function()
-            kvRows[i].key = dlg.data["key"..i]
-          end }
-          dlg:entry{ id = "value"..i, label = "Value", text = row.value or "", onchange = function()
-            kvRows[i].value = dlg.data["value"..i]
-          end }
+          if row.type == "dropdown" and type(row.dropdownOptions) == "table" then
+            dlg:combobox{
+              id = "value"..i,
+              label = row.key,
+              option = row.value or row.dropdownOptions[1],
+              options = row.dropdownOptions,
+              onchange = function()
+                kvRows[i].value = dlg.data["value"..i]
+              end
+            }
+          elseif row.type == "int" then
+            dlg:entry{
+              id = "value"..i,
+              label = row.key,
+              text = tostring(row.value or ""),
+              onchange = function()
+                local v = tonumber(dlg.data["value"..i])
+                if v and math.floor(v) == v then
+                  kvRows[i].value = v
+                else
+                  kvRows[i].value = row.value
+                end
+              end
+            }
+          elseif row.type == "float" then
+            dlg:entry{
+              id = "value"..i,
+              label = row.key,
+              text = tostring(row.value or ""),
+              onchange = function()
+                local v = tonumber(dlg.data["value"..i])
+                if v then
+                  kvRows[i].value = v
+                else
+                  kvRows[i].value = row.value -- fallback to previous value if not float
+                end
+              end
+            }
+          else -- default to string
+            dlg:entry{
+              id = "value"..i,
+              label = row.key,
+              text = row.value or "",
+              onchange = function()
+                kvRows[i].value = dlg.data["value"..i]
+              end
+            }
+          end
           dlg:button{ text = "Remove", onclick = function()
             table.remove(kvRows, i)
             showDialog()
