@@ -20,17 +20,33 @@ function setProperty(object, property, value)
   object.properties(PLUGIN_KEY)[property] = value
 end
 
-local config = dofile("config.lua")
-if DEBUG then
-  local debugInfo = "Config:\n"
-  for i, row in ipairs(config) do
-    debugInfo = debugInfo .. string.format("Row %d: key=%s, value=%s\n", i, row.key, tostring(row.value))
+-- Deep copy utility for tables
+local function deepcopy(orig)
+  local orig_type = type(orig)
+  local copy
+  if orig_type == 'table' then
+    copy = {}
+    for orig_key, orig_value in next, orig, nil do
+      copy[deepcopy(orig_key)] = deepcopy(orig_value)
+    end
+    setmetatable(copy, getmetatable(orig))
+  else
+    copy = orig
   end
-  app.alert(debugInfo)
+  return copy
 end
+
 -- Load predefined keys from config file
+local config = dofile("config.lua")
 local function loadPredefinedRows()
-  return config or { { key = "", value = "" } }
+  -- print debug info if DEBUG is true
+  if DEBUG then
+    debugPrint("Loading predefined rows from config:")
+    for i, row in ipairs(config) do
+      debugPrint(string.format("Row %d: key=%s, type=%s, value=%s", i, row.key, row.type or "string", tostring(row.value)))
+    end
+  end
+  return deepcopy(config) or { { key = "", value = "" } }
 end
 
 --=============================================================================
@@ -96,8 +112,16 @@ function init(plugin)
         end
       }
 
-      -- Key-Value pairs data
+      -- Load any defaults first
       local kvRows = loadPredefinedRows()
+
+      -- Then load any existing properties from the selected tag
+      if selectedTag.properties(PLUGIN_KEY) then
+        for key, value in pairs(selectedTag.properties(PLUGIN_KEY)) do
+          table.insert(kvRows, { key = key, value = value })
+        end
+      end
+
       -- debug alert values of kvRows
       if DEBUG then
         local debugInfo = "KV Rows:\n"
@@ -199,11 +223,10 @@ function init(plugin)
         dlg:button{ text = "Apply", onclick = function()
           local props = {}
           for _, row in ipairs(kvRows) do
-            if row.key and row.key ~= "" then
-              props[row.key] = row.value
+            if row.key and row.key ~= "" and row.value and row.value ~= "" then
+              setProperty(selectedTag, row.key, row.value)
             end
           end
-          setProperty(selectedTag, "customData", props)
           app.alert("Data saved!")
         end }
         dlg:label{ id = "info", label = "", text = string.rep(" ", 25), color = Color{ r=0, g=180, b=0 } }
