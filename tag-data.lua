@@ -162,6 +162,7 @@ function init(plugin)
             showDialog()
           end
         }
+        dlg:separator{ id = "kv_sep", text = "Properties" }
         for i, row in ipairs(kvRows) do
           dlg:entry{
             id = "key"..i,
@@ -220,13 +221,14 @@ function init(plugin)
             }
           end
           dlg:button{
-            text = "x",
+            text = "Remove",
             onclick = function()
               table.remove(kvRows, i)
               showDialog()
             end,
             focus = false
           }
+          dlg:separator{}
         end
         dlg:button{ text = "Add Row", onclick = function()
           table.insert(kvRows, { key = "", value = "" })
