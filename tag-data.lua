@@ -195,7 +195,7 @@ function init(plugin)
             showDialog()
           end
         }
-        dlg:separator{ id = "kv_sep", text = "Properties" }
+        
         -- Split kvRows into pages
         local pages = {}
         for i = 1, #kvRows, PAGE_SIZE do
@@ -251,7 +251,11 @@ function init(plugin)
               end,
               focus = false
             }
-            dlg:separator{}
+
+            -- Only draw separator if not last element in the page
+            if i < #pageRows then
+              dlg:separator{}
+            end
           end
         end
         dlg:endtabs{ id = "props_tabs", selected = selectedTab }
