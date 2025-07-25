@@ -198,6 +198,15 @@ function init(plugin)
                   kvRows[idx].value = dlg.data["value"..idx]
                 end
               }
+            elseif row.type == "bool" then
+              dlg:check{
+                id = "value"..idx,
+                label = "Value",
+                selected = row.value == true,
+                onclick = function()
+                  kvRows[idx].value = dlg.data["value"..idx]
+                end
+              }
             elseif row.type == "int" then
               dlg:entry{
                 id = "value"..idx,
