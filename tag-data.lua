@@ -7,7 +7,7 @@
 --=============================================================================
 
 local PLUGIN_KEY = ""
-local DEBUG = true
+local DEBUG = false
 local PAGE_SIZE = 3
 local DEFAULT_DIALOG_WIDTH = 200
 local DEFAULT_DIALOG_HEIGHT = 350
@@ -73,8 +73,8 @@ function init(plugin)
 
       -- Build plugin key options
       local pluginKeyIDs = {}
-      for _, entry in ipairs(config.keys) do
-        table.insert(pluginKeyIDs, entry.key)
+      for key, _ in pairs(config.keys) do
+        table.insert(pluginKeyIDs, key)
       end
       local pluginKeyID = config.defaultKeyID
       debugPrint("Default plugin key ID:", pluginKeyID)

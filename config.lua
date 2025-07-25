@@ -14,10 +14,9 @@ config.properties = {
 
 -- Predefined keys for plugin key selection
 config.keys = {
-  { key = "Root", value = "" },
-  { key = "Animation", value = "Animation"}
+  Root = "",
+  Animation = "Animation"
 }
-
 config.defaultKeyID = "Root"
 
 return config
