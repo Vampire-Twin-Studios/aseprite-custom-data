@@ -41,7 +41,7 @@ end
 
 -- Load predefined keys from config file
 local config = dofile("config.lua")
-local function loadPredefinedRows()
+local function loadPredefinedKeys()
   -- print debug info if DEBUG is true
   if DEBUG then
     debugPrint("Loading predefined rows from config:")
@@ -118,53 +118,14 @@ function init(plugin)
           end
         end
       end
-      
-      -- Create the dialog box
-      local dlg = Dialog{
-        title = "Custom Tag Data",
-        onclose = function()
-          app.refresh()
-        end
-      }
 
-      -- Select tag dropdown
-      dlg:combobox{
-        id = "tag",
-        label = "Tag",
-        option = selectedTag.name,
-        options = tagNames,
-        onchange = function()
-          selectedTag = tagMap[dlg.data.tag]
-          -- Change frame if outside selected tag
-          local currentFrame = app.activeFrame.frameNumber
-          if currentFrame < selectedTag.fromFrame.frameNumber or currentFrame > selectedTag.toFrame.frameNumber then
-            app.activeFrame = selectedTag.fromFrame.frameNumber
-          end
-        end
-      }
-
-      -- Load any defaults first
-      local kvRows = loadPredefinedRows()
-
-      -- Then load any existing properties from the selected tag
-      if selectedTag.properties(PLUGIN_KEY) then
-        for key, value in pairs(selectedTag.properties(PLUGIN_KEY)) do
-          table.insert(kvRows, { key = key, value = value })
-        end
-      end
-
-      -- debug alert values of kvRows
-      if DEBUG then
-        local debugInfo = "KV Rows:\n"
-        for i, row in ipairs(kvRows) do
-          debugInfo = debugInfo .. string.format("Row %d: key=%s, value=%s\n", i, row.key, tostring(row.value))
-        end
-        app.alert(debugInfo)
-      end
+      -- Tracking variables for dialog state
       local lastDialogBounds = nil
       local dlg = nil
       local selectedTab = "page1"
+
       local function showDialog()
+        -- If dialogue already exists, close it, save bounds and selected tab
         if dlg then
           lastDialogBounds = Rectangle(
             dlg.bounds.x,
@@ -175,12 +136,26 @@ function init(plugin)
           selectedTab = dlg.data and dlg.data.props_tabs or selectedTab
           dlg:close()
         end
+
+        -- Create a new dialog
         dlg = Dialog{
           title = "Custom Tag Data",
           onclose = function()
             app.refresh()
           end
         }
+
+        -- Load any defaults properites
+        local kvRows = loadPredefinedKeys()
+
+        -- Then load any existing properties from the selected tag
+        if selectedTag.properties(PLUGIN_KEY) then
+          for key, value in pairs(selectedTag.properties(PLUGIN_KEY)) do
+            table.insert(kvRows, { key = key, value = value })
+          end
+        end
+
+        -- Tag selection
         dlg:combobox{
           id = "tag",
           label = "Tag",
@@ -196,6 +171,17 @@ function init(plugin)
           end
         }
         
+        -- Plugin key selection (user-defined, not based on types)
+        dlg:entry{
+          id = "pluginKey",
+          label = "Plugin Key",
+          text = PLUGIN_KEY,
+          onchange = function()
+            PLUGIN_KEY = dlg.data.pluginKey
+            showDialog()
+          end
+        }
+        
         -- Split kvRows into pages
         local pages = {}
         for i = 1, #kvRows, PAGE_SIZE do
@@ -205,6 +191,7 @@ function init(plugin)
           end
           table.insert(pages, page)
         end
+        
         -- Add tabs for each page
         for p, pageRows in ipairs(pages) do
           dlg:tab{ id = "page"..p, text = "Page "..p }
