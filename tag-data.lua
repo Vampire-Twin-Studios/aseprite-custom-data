@@ -266,8 +266,8 @@ function init(plugin)
           dlg.bounds = Rectangle(
             lastDialogBounds.x,
             lastDialogBounds.y,
-            dlg.bounds.width,
-            dlg.bounds.height
+            math.max(DEFAULT_DIALOG_WIDTH, dlg.bounds.width),
+            math.max(DEFAULT_DIALOG_HEIGHT, dlg.bounds.height)
           )
         else
           dlg.bounds = Rectangle(
