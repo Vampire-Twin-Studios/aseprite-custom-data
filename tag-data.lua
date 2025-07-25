@@ -7,7 +7,7 @@
 --=============================================================================
 
 local PLUGIN_KEY = ""
-local DEBUG = true
+local DEBUG = false
 local function debugPrint(...)
   if DEBUG then print(...) end
 end
@@ -163,10 +163,18 @@ function init(plugin)
           end
         }
         for i, row in ipairs(kvRows) do
+          dlg:entry{
+            id = "key"..i,
+            label = "Key",
+            text = row.key or "",
+            onchange = function()
+              kvRows[i].key = dlg.data["key"..i]
+            end
+          }
           if row.type == "dropdown" and type(row.dropdownOptions) == "table" then
             dlg:combobox{
               id = "value"..i,
-              label = row.key,
+              label = "Value",
               option = row.value or row.dropdownOptions[1],
               options = row.dropdownOptions,
               onchange = function()
@@ -176,7 +184,7 @@ function init(plugin)
           elseif row.type == "int" then
             dlg:entry{
               id = "value"..i,
-              label = row.key,
+              label = "Value",
               text = tostring(row.value or ""),
               onchange = function()
                 local v = tonumber(dlg.data["value"..i])
@@ -190,31 +198,35 @@ function init(plugin)
           elseif row.type == "float" then
             dlg:entry{
               id = "value"..i,
-              label = row.key,
+              label = "Value",
               text = tostring(row.value or ""),
               onchange = function()
                 local v = tonumber(dlg.data["value"..i])
                 if v then
                   kvRows[i].value = v
                 else
-                  kvRows[i].value = row.value -- fallback to previous value if not float
+                  kvRows[i].value = row.value
                 end
               end
             }
           else -- default to string
             dlg:entry{
               id = "value"..i,
-              label = row.key,
+              label = "Value",
               text = row.value or "",
               onchange = function()
                 kvRows[i].value = dlg.data["value"..i]
               end
             }
           end
-          dlg:button{ text = "Remove", onclick = function()
-            table.remove(kvRows, i)
-            showDialog()
-          end }
+          dlg:button{
+            text = "x",
+            onclick = function()
+              table.remove(kvRows, i)
+              showDialog()
+            end,
+            focus = false
+          }
         end
         dlg:button{ text = "Add Row", onclick = function()
           table.insert(kvRows, { key = "", value = "" })
