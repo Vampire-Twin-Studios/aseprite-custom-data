@@ -7,8 +7,10 @@
 --=============================================================================
 
 local PLUGIN_KEY = ""
-local DEBUG = true
+local DEBUG = false
 local PAGE_SIZE = 3
+local DEFAULT_DIALOG_WIDTH = 200
+local DEFAULT_DIALOG_HEIGHT = 350
 local function debugPrint(...)
   if DEBUG then print(...) end
 end
@@ -274,7 +276,15 @@ function init(plugin)
             dlg.bounds.width,
             dlg.bounds.height
           )
+        else
+          dlg.bounds = Rectangle(
+            dlg.bounds.x,
+            dlg.bounds.y,
+            math.max(DEFAULT_DIALOG_WIDTH, dlg.bounds.width),
+            math.max(DEFAULT_DIALOG_HEIGHT, dlg.bounds.height)
+          )
         end
+
         dlg:show()
       end
       showDialog()
