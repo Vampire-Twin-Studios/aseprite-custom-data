@@ -3,7 +3,7 @@
 return {
   { key = "Author", type = "string", value = "" },
   { key = "Description", type = "string", value = "" },
-  { key = "Category", type = "dropdown", value = "Main", dropdownOptions = { "Main", "Extra", "Other" } },
+  { key = "Category", type = "order", value = 1 },
   { key = "Version", type = "int", value = 1 },
   { key = "Scale", type = "float", value = 1.0 }
 }

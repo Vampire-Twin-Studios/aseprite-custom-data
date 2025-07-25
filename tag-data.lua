@@ -7,8 +7,14 @@
 --=============================================================================
 
 local PLUGIN_KEY = ""
-local DEBUG = false
+local DEBUG = true
 local PAGE_SIZE = 3
+local DEFAULT_SUPPORTED_TYPES = {
+  "string",
+  "int",
+  "float",
+  "bool"
+}
 local function debugPrint(...)
   if DEBUG then print(...) end
 end
@@ -87,6 +93,41 @@ function init(plugin)
       end
       if not selectedTag then
         selectedTag = sprite.tags[1]
+      end
+
+      -- Scan types folder for custom enum types
+      -- Get base path of this script file
+      local thisFilePath = debug.getinfo(1, "S").source:sub(2)
+      local basePath = app.fs.filePath(thisFilePath)
+
+      -- Scan types folder for custom enum types
+      local enumTypeOptions = {}
+      local enumTypes = {}
+      local supportedTypes = deepcopy(DEFAULT_SUPPORTED_TYPES)
+
+      local typesDir = "types"
+      local typesAbsPath = app.fs.joinPath(basePath, typesDir)
+
+      if DEBUG then
+        debugPrint("Types directory:", typesAbsPath)
+      end
+
+      if app.fs.isDirectory(typesAbsPath) then
+        if DEBUG then debugPrint("Scanning types directory:", typesAbsPath) end
+        for _, file in ipairs(app.fs.listFiles(typesAbsPath)) do
+          local filename = app.fs.fileName(file)
+          if DEBUG then debugPrint("Found types file:", filename) end
+          local name = filename:match("([^/\\]+)%.lua$") -- strip .lua extension
+          if name then
+            table.insert(enumTypes, name)
+            local fullPath = app.fs.joinPath(typesAbsPath, name .. ".lua")
+            enumTypeOptions[name] = dofile(fullPath)
+          end
+        end
+      end
+
+      for _, t in ipairs(enumTypes) do
+        table.insert(supportedTypes, t)
       end
 
       -- Create the dialog box
@@ -188,12 +229,22 @@ function init(plugin)
                 kvRows[idx].key = dlg.data["key"..idx]
               end
             }
-            if row.type == "dropdown" and type(row.dropdownOptions) == "table" then
+            dlg:combobox{
+              id = "type"..idx,
+              label = "Type",
+              option = row.type or "string",
+              options = supportedTypes,
+              onchange = function()
+                kvRows[idx].type = dlg.data["type"..idx]
+                showDialog()
+              end
+            }
+            if enumTypeOptions[row.type] then
               dlg:combobox{
                 id = "value"..idx,
                 label = "Value",
-                option = row.value or row.dropdownOptions[1],
-                options = row.dropdownOptions,
+                option = row.value or enumTypeOptions[row.type][1],
+                options = enumTypeOptions[row.type],
                 onchange = function()
                   kvRows[idx].value = dlg.data["value"..idx]
                 end
