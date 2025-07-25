@@ -8,6 +8,7 @@
 
 local PLUGIN_KEY = ""
 local DEBUG = false
+local PAGE_SIZE = 3
 local function debugPrint(...)
   if DEBUG then print(...) end
 end
@@ -163,73 +164,88 @@ function init(plugin)
           end
         }
         dlg:separator{ id = "kv_sep", text = "Properties" }
-        for i, row in ipairs(kvRows) do
-          dlg:entry{
-            id = "key"..i,
-            label = "Key",
-            text = row.key or "",
-            onchange = function()
-              kvRows[i].key = dlg.data["key"..i]
-            end
-          }
-          if row.type == "dropdown" and type(row.dropdownOptions) == "table" then
-            dlg:combobox{
-              id = "value"..i,
-              label = "Value",
-              option = row.value or row.dropdownOptions[1],
-              options = row.dropdownOptions,
-              onchange = function()
-                kvRows[i].value = dlg.data["value"..i]
-              end
-            }
-          elseif row.type == "int" then
-            dlg:entry{
-              id = "value"..i,
-              label = "Value",
-              text = tostring(row.value or ""),
-              onchange = function()
-                local v = tonumber(dlg.data["value"..i])
-                if v and math.floor(v) == v then
-                  kvRows[i].value = v
-                else
-                  kvRows[i].value = row.value
-                end
-              end
-            }
-          elseif row.type == "float" then
-            dlg:entry{
-              id = "value"..i,
-              label = "Value",
-              text = tostring(row.value or ""),
-              onchange = function()
-                local v = tonumber(dlg.data["value"..i])
-                if v then
-                  kvRows[i].value = v
-                else
-                  kvRows[i].value = row.value
-                end
-              end
-            }
-          else -- default to string
-            dlg:entry{
-              id = "value"..i,
-              label = "Value",
-              text = row.value or "",
-              onchange = function()
-                kvRows[i].value = dlg.data["value"..i]
-              end
-            }
+        -- Split kvRows into pages
+        local pages = {}
+        for i = 1, #kvRows, PAGE_SIZE do
+          local page = {}
+          for j = i, math.min(i+PAGE_SIZE-1, #kvRows) do
+            table.insert(page, kvRows[j])
           end
-          dlg:button{
-            text = "Remove",
-            onclick = function()
-              table.remove(kvRows, i)
-              showDialog()
-            end,
-            focus = false
-          }
-          dlg:separator{}
+          table.insert(pages, page)
         end
+        -- Add tabs for each page
+        for p, pageRows in ipairs(pages) do
+          dlg:tab{ id = "page"..p, text = "Page "..p }
+          for i, row in ipairs(pageRows) do
+            local idx = (p-1)*PAGE_SIZE + i
+            dlg:entry{
+              id = "key"..idx,
+              label = "Key",
+              text = row.key or "",
+              onchange = function()
+                kvRows[idx].key = dlg.data["key"..idx]
+              end
+            }
+            if row.type == "dropdown" and type(row.dropdownOptions) == "table" then
+              dlg:combobox{
+                id = "value"..idx,
+                label = "Value",
+                option = row.value or row.dropdownOptions[1],
+                options = row.dropdownOptions,
+                onchange = function()
+                  kvRows[idx].value = dlg.data["value"..idx]
+                end
+              }
+            elseif row.type == "int" then
+              dlg:entry{
+                id = "value"..idx,
+                label = "Value",
+                text = tostring(row.value or ""),
+                onchange = function()
+                  local v = tonumber(dlg.data["value"..idx])
+                  if v and math.floor(v) == v then
+                    kvRows[idx].value = v
+                  else
+                    kvRows[idx].value = row.value
+                  end
+                end
+              }
+            elseif row.type == "float" then
+              dlg:entry{
+                id = "value"..idx,
+                label = "Value",
+                text = tostring(row.value or ""),
+                onchange = function()
+                  local v = tonumber(dlg.data["value"..idx])
+                  if v then
+                    kvRows[idx].value = v
+                  else
+                    kvRows[idx].value = row.value
+                  end
+                end
+              }
+            else -- default to string
+              dlg:entry{
+                id = "value"..idx,
+                label = "Value",
+                text = row.value or "",
+                onchange = function()
+                  kvRows[idx].value = dlg.data["value"..idx]
+                end
+              }
+            end
+            dlg:button{
+              text = "Remove",
+              onclick = function()
+                table.remove(kvRows, idx)
+                showDialog()
+              end,
+              focus = false
+            }
+            dlg:separator{}
+          end
+        end
+        dlg:endtabs{ id = "props_tabs", selected = "page1" }
         dlg:button{ text = "Add Row", onclick = function()
           table.insert(kvRows, { key = "", value = "" })
           showDialog()
