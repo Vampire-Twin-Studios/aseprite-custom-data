@@ -133,6 +133,7 @@ function init(plugin)
       end
       local lastDialogBounds = nil
       local dlg = nil
+      local selectedTab = "page1"
       local function showDialog()
         if dlg then
           lastDialogBounds = Rectangle(
@@ -141,6 +142,7 @@ function init(plugin)
             dlg.bounds.width,
             dlg.bounds.height
           )
+          selectedTab = dlg.data and dlg.data.props_tabs or selectedTab
           dlg:close()
         end
         dlg = Dialog{
@@ -245,7 +247,7 @@ function init(plugin)
             dlg:separator{}
           end
         end
-        dlg:endtabs{ id = "props_tabs", selected = "page1" }
+        dlg:endtabs{ id = "props_tabs", selected = selectedTab }
         dlg:button{ text = "Add Row", onclick = function()
           table.insert(kvRows, { key = "", value = "" })
           showDialog()
