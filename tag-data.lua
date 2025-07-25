@@ -7,7 +7,7 @@
 --=============================================================================
 
 local PLUGIN_KEY = ""
-local DEBUG = false
+local DEBUG = true
 local PAGE_SIZE = 3
 local DEFAULT_DIALOG_WIDTH = 200
 local DEFAULT_DIALOG_HEIGHT = 350
@@ -74,10 +74,12 @@ function init(plugin)
       -- Build plugin key options
       local pluginKeyIDs = {}
       for _, entry in ipairs(config.keys) do
-        table.insert(pluginKeyIDs, entry.id)
+        table.insert(pluginKeyIDs, entry.key)
       end
       local pluginKeyID = config.defaultKeyID
+      debugPrint("Default plugin key ID:", pluginKeyID)
       PLUGIN_KEY = config.keys[pluginKeyID]
+      debugPrint("Current plugin key:", PLUGIN_KEY)
 
       -- Default selection to tag that contains the current frame otherwise first tag
       local currentFrame = app.activeFrame.frameNumber
