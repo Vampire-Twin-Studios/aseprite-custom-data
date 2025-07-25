@@ -42,14 +42,7 @@ end
 -- Load predefined keys from config file
 local config = dofile("config.lua")
 local function loadPredefinedKeys()
-  -- print debug info if DEBUG is true
-  if DEBUG then
-    debugPrint("Loading predefined rows from config:")
-    for i, row in ipairs(config) do
-      debugPrint(string.format("Row %d: key=%s, type=%s, value=%s", i, row.key, row.type or "string", tostring(row.value)))
-    end
-  end
-  return deepcopy(config) or { { key = "", value = "" } }
+  return deepcopy(config.properties) or { { key = "", value = "" } }
 end
 
 --=============================================================================
@@ -78,6 +71,13 @@ function init(plugin)
         tagMap[t.name] = t
       end
 
+      -- Build plugin key options
+      local pluginKeyOptions = {}
+      for _, entry in ipairs(config.keys) do
+        table.insert(pluginKeyOptions, entry.key)
+      end
+      PLUGIN_KEY = config.defaultKey
+
       -- Default selection to tag that contains the current frame otherwise first tag
       local currentFrame = app.activeFrame.frameNumber
       local selectedTag = nil
@@ -100,10 +100,6 @@ function init(plugin)
       local typeHelpers = {}
       local typesDir = "types"
       local typesAbsPath = app.fs.joinPath(basePath, typesDir)
-
-      if DEBUG then
-        debugPrint("Types directory:", typesAbsPath)
-      end
 
       if app.fs.isDirectory(typesAbsPath) then
         if DEBUG then debugPrint("Scanning types directory:", typesAbsPath) end
@@ -171,12 +167,17 @@ function init(plugin)
           end
         }
         
-        -- Plugin key selection (user-defined, not based on types)
-        dlg:entry{
+        -- Plugin key selection
+        debugPrint("Plugin key options:", #pluginKeyOptions)
+        for _, option in ipairs(pluginKeyOptions) do
+          debugPrint(" -", option)
+        end
+        debugPrint("Current plugin key:", PLUGIN_KEY)
+        dlg:combobox{
           id = "pluginKey",
           label = "Plugin Key",
-          text = PLUGIN_KEY,
-          focus = true,
+          option = PLUGIN_KEY,
+          options = pluginKeyOptions,
           onchange = function()
             PLUGIN_KEY = dlg.data.pluginKey
             showDialog()
