@@ -9,12 +9,6 @@
 local PLUGIN_KEY = ""
 local DEBUG = true
 local PAGE_SIZE = 3
-local DEFAULT_SUPPORTED_TYPES = {
-  "string",
-  "int",
-  "float",
-  "bool"
-}
 local function debugPrint(...)
   if DEBUG then print(...) end
 end
@@ -100,8 +94,7 @@ function init(plugin)
       local basePath = app.fs.filePath(thisFilePath)
 
       -- Scan types folder for custom type helpers
-      local enumTypes = {}
-      local supportedTypes = deepcopy(DEFAULT_SUPPORTED_TYPES)
+      local supportedTypes = {}
       local typeHelpers = {}
       local typesDir = "types"
       local typesAbsPath = app.fs.joinPath(basePath, typesDir)
@@ -117,17 +110,13 @@ function init(plugin)
           if DEBUG then debugPrint("Found types file:", filename) end
           local name = filename:match("([^/\\]+)%.lua$") -- strip .lua extension
           if name then
-            table.insert(enumTypes, name)
+            table.insert(supportedTypes, name)
             local fullPath = app.fs.joinPath(typesAbsPath, name .. ".lua")
             typeHelpers[name] = dofile(fullPath)
           end
         end
       end
-
-      for _, t in ipairs(enumTypes) do
-        table.insert(supportedTypes, t)
-      end
-
+      
       -- Create the dialog box
       local dlg = Dialog{
         title = "Custom Tag Data",
