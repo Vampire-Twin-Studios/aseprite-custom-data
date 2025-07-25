@@ -95,16 +95,14 @@ function init(plugin)
         selectedTag = sprite.tags[1]
       end
 
-      -- Scan types folder for custom enum types
       -- Get base path of this script file
       local thisFilePath = debug.getinfo(1, "S").source:sub(2)
       local basePath = app.fs.filePath(thisFilePath)
 
-      -- Scan types folder for custom enum types
-      local enumTypeOptions = {}
+      -- Scan types folder for custom type helpers
       local enumTypes = {}
       local supportedTypes = deepcopy(DEFAULT_SUPPORTED_TYPES)
-
+      local typeHelpers = {}
       local typesDir = "types"
       local typesAbsPath = app.fs.joinPath(basePath, typesDir)
 
@@ -121,7 +119,7 @@ function init(plugin)
           if name then
             table.insert(enumTypes, name)
             local fullPath = app.fs.joinPath(typesAbsPath, name .. ".lua")
-            enumTypeOptions[name] = dofile(fullPath)
+            typeHelpers[name] = dofile(fullPath)
           end
         end
       end
@@ -239,54 +237,12 @@ function init(plugin)
                 showDialog()
               end
             }
-            if enumTypeOptions[row.type] then
-              dlg:combobox{
-                id = "value"..idx,
-                label = "Value",
-                option = row.value or enumTypeOptions[row.type][1],
-                options = enumTypeOptions[row.type],
-                onchange = function()
-                  kvRows[idx].value = dlg.data["value"..idx]
-                end
-              }
-            elseif row.type == "bool" then
-              dlg:check{
-                id = "value"..idx,
-                label = "Value",
-                selected = row.value == true,
-                onclick = function()
-                  kvRows[idx].value = dlg.data["value"..idx]
-                end
-              }
-            elseif row.type == "int" then
-              dlg:entry{
-                id = "value"..idx,
-                label = "Value",
-                text = tostring(row.value or ""),
-                onchange = function()
-                  local v = tonumber(dlg.data["value"..idx])
-                  if v and math.floor(v) == v then
-                    kvRows[idx].value = v
-                  else
-                    kvRows[idx].value = row.value
-                  end
-                end
-              }
-            elseif row.type == "float" then
-              dlg:entry{
-                id = "value"..idx,
-                label = "Value",
-                text = tostring(row.value or ""),
-                onchange = function()
-                  local v = tonumber(dlg.data["value"..idx])
-                  if v then
-                    kvRows[idx].value = v
-                  else
-                    kvRows[idx].value = row.value
-                  end
-                end
-              }
-            else -- default to string
+            local typeHelper = typeHelpers[row.type]
+            if typeHelper and typeHelper.draw then
+              typeHelper.draw(dlg, "value"..idx, row.value, function()
+                kvRows[idx].value = typeHelper.getValue and typeHelper.getValue(dlg.data, "value"..idx) or dlg.data["value"..idx]
+              end)
+            else
               dlg:entry{
                 id = "value"..idx,
                 label = "Value",
