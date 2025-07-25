@@ -3,15 +3,14 @@ return {
     dlg:entry{
       id = id,
       label = "Value",
-      text = tostring(value or ""),
+      text = tostring(value or 0),
       onchange = onchange
     }
   end,
   getValue = function(data, id)
-    local v = tonumber(data[id])
-    if v and math.floor(v) == v then
-      return v
-    end
-    return nil
+    return tonumber(data[id]) or 0
+  end,
+  isType = function(value)
+    return type(value) == "number" and math.floor(value) == value
   end
 }

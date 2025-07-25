@@ -72,11 +72,12 @@ function init(plugin)
       end
 
       -- Build plugin key options
-      local pluginKeyOptions = {}
+      local pluginKeyIDs = {}
       for _, entry in ipairs(config.keys) do
-        table.insert(pluginKeyOptions, entry.key)
+        table.insert(pluginKeyIDs, entry.id)
       end
-      PLUGIN_KEY = config.defaultKey
+      local pluginKeyID = config.defaultKeyID
+      PLUGIN_KEY = config.keys[pluginKeyID]
 
       -- Default selection to tag that contains the current frame otherwise first tag
       local currentFrame = app.activeFrame.frameNumber
@@ -147,7 +148,15 @@ function init(plugin)
         -- Then load any existing properties from the selected tag
         if selectedTag.properties(PLUGIN_KEY) then
           for key, value in pairs(selectedTag.properties(PLUGIN_KEY)) do
-            table.insert(kvRows, { key = key, value = value })
+            local typeFound = nil
+            for _, typeName in ipairs(supportedTypes) do
+              local typeHelper = typeHelpers[typeName]
+              if typeHelper and typeHelper.isType and typeHelper.isType(value) then
+                typeFound = typeName
+                break
+              end
+            end
+            table.insert(kvRows, { key = key, value = value, type = typeFound or "string" })
           end
         end
 
@@ -168,18 +177,19 @@ function init(plugin)
         }
         
         -- Plugin key selection
-        debugPrint("Plugin key options:", #pluginKeyOptions)
-        for _, option in ipairs(pluginKeyOptions) do
+        debugPrint("Plugin key options:", #pluginKeyIDs)
+        for _, option in ipairs(pluginKeyIDs) do
           debugPrint(" -", option)
         end
         debugPrint("Current plugin key:", PLUGIN_KEY)
         dlg:combobox{
           id = "pluginKey",
           label = "Plugin Key",
-          option = PLUGIN_KEY,
-          options = pluginKeyOptions,
+          option = pluginKeyID,
+          options = pluginKeyIDs,
           onchange = function()
-            PLUGIN_KEY = dlg.data.pluginKey
+            pluginKeyID = dlg.data.pluginKey
+            PLUGIN_KEY = config.keys[pluginKeyID]
             showDialog()
           end
         }

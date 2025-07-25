@@ -9,5 +9,8 @@ return {
   end,
   getValue = function(data, id)
     return data[id] == true
+  end,
+  isType = function(value)
+    return type(value) == "boolean"
   end
 }

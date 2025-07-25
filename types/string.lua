@@ -16,4 +16,8 @@ function stringType.getValue(data, id)
   return data[id] or ""
 end
 
+function stringType.isType(value)
+  return type(value) == "string"
+end
+
 return stringType

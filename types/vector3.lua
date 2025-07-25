@@ -12,5 +12,8 @@ return {
       y = tonumber(data[id.."_y"]) or 0,
       z = tonumber(data[id.."_z"]) or 0
     }
+  end,
+  isType = function(value)
+    return type(value) == "table" and value.x ~= nil and value.y ~= nil and value.z ~= nil
   end
 }
