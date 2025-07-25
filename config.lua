@@ -18,6 +18,6 @@ config.keys = {
   { id = "Animation", value = "Animation"}
 }
 
-config.defaultKey = "Root"
+config.defaultKeyID = "Root"
 
 return config
