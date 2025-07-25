@@ -176,6 +176,7 @@ function init(plugin)
           id = "pluginKey",
           label = "Plugin Key",
           text = PLUGIN_KEY,
+          focus = true,
           onchange = function()
             PLUGIN_KEY = dlg.data.pluginKey
             showDialog()
