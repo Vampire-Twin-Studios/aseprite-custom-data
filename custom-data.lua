@@ -67,8 +67,11 @@ end
 
 --=============================================================================
 
-local function getPredefinedKeys(pluginKeyID)
-  if not CONFIG.keys or not CONFIG.keys[pluginKeyID] or not CONFIG.keys[pluginKeyID].default_properties then
+local function getPredefinedKeys(objType, pluginKeyID)
+  if not CONFIG.keys
+    or not CONFIG.keys[pluginKeyID]
+    or not CONFIG.keys[pluginKeyID].default_properties
+    or not CONFIG.keys[pluginKeyID].default_properties[objType] then
     return {}
   end
   return deepcopy(CONFIG.keys[pluginKeyID].default_properties)
@@ -106,9 +109,9 @@ local SUPPORTED_TYPES, TYPE_HELPERS = populateTypes()
 
 --=============================================================================
 
-local function reloadProperties(object, pluginKeyID)
-  -- Load any defaults properites
-  local kvRows = getPredefinedKeys(pluginKeyID)
+local function reloadProperties(object, objType, pluginKeyID)
+  -- Load any defaults properties
+  local kvRows = getPredefinedKeys(objType, pluginKeyID)
 
   -- Then load any existing properties from the selected tag
   if object.properties(PLUGIN_KEY) then
@@ -163,7 +166,7 @@ local function drawWindow(objType)
   local lastDialogBounds = nil
   local dlg = nil
   local selectedTab = "page1"
-  local properties = reloadProperties(selectedObject, pluginKeyID)
+  local properties = reloadProperties(selectedObject, objType, pluginKeyID)
 
   local function showDialog()
     -- If dialogue already exists, close it, save bounds and selected tab
@@ -213,7 +216,7 @@ local function drawWindow(objType)
       onchange = function()
         pluginKeyID = dlg.data.pluginKey
         PLUGIN_KEY = CONFIG.keys[pluginKeyID].plugin
-        properties = reloadProperties(selectedObject, pluginKeyID)
+        properties = reloadProperties(selectedObject, objType, pluginKeyID)
         showDialog()
       end
     }

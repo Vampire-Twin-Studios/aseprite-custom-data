@@ -12,7 +12,7 @@ config.keys = {
   Animation = {
     plugin = "Animation",
     default_properties = {
-      { key = "Phase", type = "phase", value = "Solo" }
+      Tag = { key = "Phase", type = "phase", value = "Solo" }
     }
   }
 }
