@@ -94,6 +94,7 @@ local function reloadProperties(object)
       for _, typeName in ipairs(SUPPORTED_TYPES) do
         local typeHelper = TYPE_HELPERS[typeName]
         if typeHelper and typeHelper.isType and typeHelper.isType(value) then
+          debugPrint("Found type for key:", key, "->", typeName)
           typeFound = typeName
           break
         end
@@ -136,9 +137,7 @@ function init(plugin)
         table.insert(pluginKeyIDs, key)
       end
       local pluginKeyID = CONFIG.defaultKeyID
-      debugPrint("Default plugin key ID:", pluginKeyID)
       PLUGIN_KEY = CONFIG.keys[pluginKeyID]
-      debugPrint("Current plugin key:", PLUGIN_KEY)
       
       -- Default selection to tag that contains the current frame otherwise first tag
       local currentFrame = app.activeFrame.frameNumber
@@ -152,7 +151,6 @@ function init(plugin)
       if not selectedTag then
         selectedTag = sprite.tags[1]
       end
-      debugPrint("Selected tag:", selectedTag.name)
 
       -- Tracking variables for dialog state
       local lastDialogBounds = nil
@@ -198,25 +196,18 @@ function init(plugin)
         }
         
         -- Plugin key selection
-        debugPrint("Plugin key options:", #pluginKeyIDs)
-        for _, option in ipairs(pluginKeyIDs) do
-          debugPrint(" -", option)
-        end
-        debugPrint("Current plugin key:", PLUGIN_KEY)
         dlg:combobox{
           id = "pluginKey",
           label = "Plugin Key",
           option = pluginKeyID,
           options = pluginKeyIDs,
           onchange = function()
-            debugPrint("Selected plugin key from combobox:", dlg.data.pluginKey)
             pluginKeyID = dlg.data.pluginKey
             PLUGIN_KEY = CONFIG.keys[pluginKeyID]
             properties = reloadProperties(selectedTag)
             showDialog()
           end
         }
-        debugPrint("Reloaded properties for tag:", selectedTag.name)
         
         -- Split properties into pages
         local pages = {}
@@ -227,7 +218,6 @@ function init(plugin)
           end
           table.insert(pages, page)
         end
-        debugPrint("Total pages:", #pages)
         
         -- Add tabs for each page
         for p, pageRows in ipairs(pages) do
