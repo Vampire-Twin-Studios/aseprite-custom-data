@@ -72,9 +72,9 @@ local function getPredefinedKeys(objType, pluginKeyID)
     or not CONFIG.keys[pluginKeyID]
     or not CONFIG.keys[pluginKeyID].default_properties
     or not CONFIG.keys[pluginKeyID].default_properties[objType] then
-    return {}
-  end
-  return deepcopy(CONFIG.keys[pluginKeyID].default_properties)
+      return {}
+    end
+  return deepcopy(CONFIG.keys[pluginKeyID].default_properties[objType])
 end
 
 --=============================================================================
