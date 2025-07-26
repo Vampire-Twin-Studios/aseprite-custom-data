@@ -15,14 +15,12 @@ local TYPES_DIR = "types"
 local CONFIG = dofile("config.lua")
 local SUPPORTED_OBJECTS = {
   "Cel",
-  "Frame",
   "Layer",
   "Slice",
   "Tag"
 }
 local OBJECT_ID_MAP = {
   Cel = "frameNumber",
-  Frame = "frameNumber",
   Layer = "name",
   Slice = "name",
   Tag = "name"
@@ -140,6 +138,10 @@ local function drawWindow(objType)
 
   -- Get the active object as the current selection
   local selectedObject = app[typeKey]
+  if not selectedObject then
+    app.alert("No " .. objType .. " selected!")
+    return
+  end
   
   -- Build all object options
   local objectIDs = {}
