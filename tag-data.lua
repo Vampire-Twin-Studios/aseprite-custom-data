@@ -24,8 +24,16 @@ end
 
 --=============================================================================
 
-local function setProperty(object, property, value)
-  object.properties(PLUGIN_KEY)[property] = value
+local function clearProperties(object, key)
+  if object.properties(key) then
+    object.properties(key, {})
+  end
+end
+
+--=============================================================================
+
+local function setProperty(object, key, property, value)
+  object.properties(key)[property] = value
 end
 
 --=============================================================================
@@ -284,7 +292,8 @@ function init(plugin)
           local props = {}
           for _, row in ipairs(properties) do
             if row.key and row.key ~= "" and row.value and row.value ~= "" then
-              setProperty(selectedTag, row.key, row.value)
+              clearProperties(selectedTag, PLUGIN_KEY)
+              setProperty(selectedTag, PLUGIN_KEY, row.key, row.value)
             end
           end
           app.alert("Data saved!")
