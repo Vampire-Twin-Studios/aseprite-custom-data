@@ -11,19 +11,25 @@ local DEBUG = false
 local PAGE_SIZE = 3
 local DEFAULT_DIALOG_WIDTH = 200
 local DEFAULT_DIALOG_HEIGHT = 350
-local function debugPrint(...)
-  if DEBUG then print(...) end
-end
+local TYPES_DIR = "types"
+local CONFIG = dofile("config.lua")
 
 --=============================================================================
 -- HELPER FUNCTIONS
 --=============================================================================
 
-function setProperty(object, property, value)
+local function debugPrint(...)
+  if DEBUG then print(...) end
+end
+
+--=============================================================================
+
+local function setProperty(object, property, value)
   object.properties(PLUGIN_KEY)[property] = value
 end
 
--- Deep copy utility for tables
+--=============================================================================
+
 local function deepcopy(orig)
   local orig_type = type(orig)
   local copy
@@ -39,10 +45,63 @@ local function deepcopy(orig)
   return copy
 end
 
--- Load predefined keys from config file
-local config = dofile("config.lua")
-local function loadPredefinedKeys()
-  return deepcopy(config.properties) or { { key = "", value = "" } }
+--=============================================================================
+
+local function getPredefinedKeys()
+  return deepcopy(CONFIG.properties) or { { key = "", value = "" } }
+end
+
+--=============================================================================
+
+local function populateTypes()
+    -- Get base path of this script file
+    local thisFilePath = debug.getinfo(1, "S").source:sub(2)
+    local basePath = app.fs.filePath(thisFilePath)
+
+    -- Scan types folder for custom type helpers
+    local supportedTypes = {}
+    local typeHelpers = {}
+    local typesAbsPath = app.fs.joinPath(basePath, TYPES_DIR)
+
+    if app.fs.isDirectory(typesAbsPath) then
+      if DEBUG then debugPrint("Scanning types directory:", typesAbsPath) end
+      for _, file in ipairs(app.fs.listFiles(typesAbsPath)) do
+        local filename = app.fs.fileName(file)
+        if DEBUG then debugPrint("Found types file:", filename) end
+        local name = filename:match("([^/\\]+)%.lua$") -- strip .lua extension
+        if name then
+          table.insert(supportedTypes, name)
+          local fullPath = app.fs.joinPath(typesAbsPath, name .. ".lua")
+          typeHelpers[name] = dofile(fullPath)
+        end
+      end
+    end
+
+    return supportedTypes, typeHelpers
+end
+local SUPPORTED_TYPES, TYPE_HELPERS = populateTypes()
+
+--=============================================================================
+
+local function reloadProperties(object)
+  -- Load any defaults properites
+  local kvRows = getPredefinedKeys()
+
+  -- Then load any existing properties from the selected tag
+  if object.properties(PLUGIN_KEY) then
+    for key, value in pairs(object.properties(PLUGIN_KEY)) do
+      local typeFound = nil
+      for _, typeName in ipairs(SUPPORTED_TYPES) do
+        local typeHelper = TYPE_HELPERS[typeName]
+        if typeHelper and typeHelper.isType and typeHelper.isType(value) then
+          typeFound = typeName
+          break
+        end
+      end
+      table.insert(kvRows, { key = key, value = value, type = typeFound or "string" })
+    end
+  end
+  return kvRows
 end
 
 --=============================================================================
@@ -73,14 +132,14 @@ function init(plugin)
 
       -- Build plugin key options
       local pluginKeyIDs = {}
-      for key, _ in pairs(config.keys) do
+      for key, _ in pairs(CONFIG.keys) do
         table.insert(pluginKeyIDs, key)
       end
-      local pluginKeyID = config.defaultKeyID
+      local pluginKeyID = CONFIG.defaultKeyID
       debugPrint("Default plugin key ID:", pluginKeyID)
-      PLUGIN_KEY = config.keys[pluginKeyID]
+      PLUGIN_KEY = CONFIG.keys[pluginKeyID]
       debugPrint("Current plugin key:", PLUGIN_KEY)
-
+      
       -- Default selection to tag that contains the current frame otherwise first tag
       local currentFrame = app.activeFrame.frameNumber
       local selectedTag = nil
@@ -93,35 +152,13 @@ function init(plugin)
       if not selectedTag then
         selectedTag = sprite.tags[1]
       end
-
-      -- Get base path of this script file
-      local thisFilePath = debug.getinfo(1, "S").source:sub(2)
-      local basePath = app.fs.filePath(thisFilePath)
-
-      -- Scan types folder for custom type helpers
-      local supportedTypes = {}
-      local typeHelpers = {}
-      local typesDir = "types"
-      local typesAbsPath = app.fs.joinPath(basePath, typesDir)
-
-      if app.fs.isDirectory(typesAbsPath) then
-        if DEBUG then debugPrint("Scanning types directory:", typesAbsPath) end
-        for _, file in ipairs(app.fs.listFiles(typesAbsPath)) do
-          local filename = app.fs.fileName(file)
-          if DEBUG then debugPrint("Found types file:", filename) end
-          local name = filename:match("([^/\\]+)%.lua$") -- strip .lua extension
-          if name then
-            table.insert(supportedTypes, name)
-            local fullPath = app.fs.joinPath(typesAbsPath, name .. ".lua")
-            typeHelpers[name] = dofile(fullPath)
-          end
-        end
-      end
+      debugPrint("Selected tag:", selectedTag.name)
 
       -- Tracking variables for dialog state
       local lastDialogBounds = nil
       local dlg = nil
       local selectedTab = "page1"
+      local properties = reloadProperties(selectedTag)
 
       local function showDialog()
         -- If dialogue already exists, close it, save bounds and selected tab
@@ -143,24 +180,6 @@ function init(plugin)
             app.refresh()
           end
         }
-
-        -- Load any defaults properites
-        local kvRows = loadPredefinedKeys()
-
-        -- Then load any existing properties from the selected tag
-        if selectedTag.properties(PLUGIN_KEY) then
-          for key, value in pairs(selectedTag.properties(PLUGIN_KEY)) do
-            local typeFound = nil
-            for _, typeName in ipairs(supportedTypes) do
-              local typeHelper = typeHelpers[typeName]
-              if typeHelper and typeHelper.isType and typeHelper.isType(value) then
-                typeFound = typeName
-                break
-              end
-            end
-            table.insert(kvRows, { key = key, value = value, type = typeFound or "string" })
-          end
-        end
 
         -- Tag selection
         dlg:combobox{
@@ -190,21 +209,25 @@ function init(plugin)
           option = pluginKeyID,
           options = pluginKeyIDs,
           onchange = function()
+            debugPrint("Selected plugin key from combobox:", dlg.data.pluginKey)
             pluginKeyID = dlg.data.pluginKey
-            PLUGIN_KEY = config.keys[pluginKeyID]
+            PLUGIN_KEY = CONFIG.keys[pluginKeyID]
+            properties = reloadProperties(selectedTag)
             showDialog()
           end
         }
+        debugPrint("Reloaded properties for tag:", selectedTag.name)
         
-        -- Split kvRows into pages
+        -- Split properties into pages
         local pages = {}
-        for i = 1, #kvRows, PAGE_SIZE do
+        for i = 1, #properties, PAGE_SIZE do
           local page = {}
-          for j = i, math.min(i+PAGE_SIZE-1, #kvRows) do
-            table.insert(page, kvRows[j])
+          for j = i, math.min(i+PAGE_SIZE-1, #properties) do
+            table.insert(page, properties[j])
           end
           table.insert(pages, page)
         end
+        debugPrint("Total pages:", #pages)
         
         -- Add tabs for each page
         for p, pageRows in ipairs(pages) do
@@ -216,23 +239,23 @@ function init(plugin)
               label = "Key",
               text = row.key or "",
               onchange = function()
-                kvRows[idx].key = dlg.data["key"..idx]
+                properties[idx].key = dlg.data["key"..idx]
               end
             }
             dlg:combobox{
               id = "type"..idx,
               label = "Type",
               option = row.type or "string",
-              options = supportedTypes,
+              options = SUPPORTED_TYPES,
               onchange = function()
-                kvRows[idx].type = dlg.data["type"..idx]
+                properties[idx].type = dlg.data["type"..idx]
                 showDialog()
               end
             }
-            local typeHelper = typeHelpers[row.type]
+            local typeHelper = TYPE_HELPERS[row.type]
             if typeHelper and typeHelper.draw then
               typeHelper.draw(dlg, "value"..idx, row.value, function()
-                kvRows[idx].value = typeHelper.getValue and typeHelper.getValue(dlg.data, "value"..idx) or dlg.data["value"..idx]
+                properties[idx].value = typeHelper.getValue and typeHelper.getValue(dlg.data, "value"..idx) or dlg.data["value"..idx]
               end)
             else
               dlg:entry{
@@ -240,14 +263,14 @@ function init(plugin)
                 label = "Value",
                 text = row.value or "",
                 onchange = function()
-                  kvRows[idx].value = dlg.data["value"..idx]
+                  properties[idx].value = dlg.data["value"..idx]
                 end
               }
             end
             dlg:button{
               text = "Remove",
               onclick = function()
-                table.remove(kvRows, idx)
+                table.remove(properties, idx)
                 showDialog()
               end,
               focus = false
@@ -260,13 +283,13 @@ function init(plugin)
           end
         end
         dlg:endtabs{ id = "props_tabs", selected = selectedTab }
-        dlg:button{ text = "Add Row", onclick = function()
-          table.insert(kvRows, { key = "", value = "" })
+        dlg:button{ text = "Add Property", onclick = function()
+          table.insert(properties, { key = "", value = "" })
           showDialog()
         end }
         dlg:button{ text = "Apply", onclick = function()
           local props = {}
-          for _, row in ipairs(kvRows) do
+          for _, row in ipairs(properties) do
             if row.key and row.key ~= "" and row.value and row.value ~= "" then
               setProperty(selectedTag, row.key, row.value)
             end
@@ -278,7 +301,7 @@ function init(plugin)
           dlg.bounds = Rectangle(
             lastDialogBounds.x,
             lastDialogBounds.y,
-            math.max(DEFAULT_DIALOG_WIDTH, dlg.bounds.width),
+            math.max(DEFAULT_DIALOG_WIDTH, dlg.bounds.width, lastDialogBounds.width),
             math.max(DEFAULT_DIALOG_HEIGHT, dlg.bounds.height)
           )
         else
