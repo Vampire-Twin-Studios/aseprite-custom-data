@@ -16,6 +16,6 @@ config.keys = {
     }
   }
 }
-config.defaultKeyID = "Root"
+config.defaultKeyID = "Animation"
 
 return config
