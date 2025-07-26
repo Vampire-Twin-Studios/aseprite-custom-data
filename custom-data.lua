@@ -152,7 +152,10 @@ local function drawWindow(objType)
   -- Get the active object as the current selection
   local selectedObject = app[typeKey]
   if not selectedObject then
-    app.alert("No " .. objType .. " selected!")
+    if objType == "Cel" then
+      app.alert("Can't define custom data on an empty cell!")
+    else
+      app.alert("No " .. objType .. " selected!")
     return
   end
   
