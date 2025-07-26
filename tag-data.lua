@@ -47,8 +47,11 @@ end
 
 --=============================================================================
 
-local function getPredefinedKeys()
-  return deepcopy(CONFIG.properties) or { { key = "", value = "" } }
+local function getPredefinedKeys(pluginKeyID)
+  if not CONFIG.keys or not CONFIG.keys[pluginKeyID] or not CONFIG.keys[pluginKeyID].default_properties then
+    return {}
+  end
+  return deepcopy(CONFIG.keys[pluginKeyID].default_properties)
 end
 
 --=============================================================================
@@ -83,9 +86,9 @@ local SUPPORTED_TYPES, TYPE_HELPERS = populateTypes()
 
 --=============================================================================
 
-local function reloadProperties(object)
+local function reloadProperties(object, pluginKeyID)
   -- Load any defaults properites
-  local kvRows = getPredefinedKeys()
+  local kvRows = getPredefinedKeys(pluginKeyID)
 
   -- Then load any existing properties from the selected tag
   if object.properties(PLUGIN_KEY) then
@@ -137,7 +140,7 @@ function init(plugin)
         table.insert(pluginKeyIDs, key)
       end
       local pluginKeyID = CONFIG.defaultKeyID
-      PLUGIN_KEY = CONFIG.keys[pluginKeyID]
+      PLUGIN_KEY = CONFIG.keys[pluginKeyID].plugin
       
       -- Default selection to tag that contains the current frame otherwise first tag
       local currentFrame = app.activeFrame.frameNumber
@@ -156,7 +159,7 @@ function init(plugin)
       local lastDialogBounds = nil
       local dlg = nil
       local selectedTab = "page1"
-      local properties = reloadProperties(selectedTag)
+      local properties = reloadProperties(selectedTag, pluginKeyID)
 
       local function showDialog()
         -- If dialogue already exists, close it, save bounds and selected tab
@@ -203,8 +206,8 @@ function init(plugin)
           options = pluginKeyIDs,
           onchange = function()
             pluginKeyID = dlg.data.pluginKey
-            PLUGIN_KEY = CONFIG.keys[pluginKeyID]
-            properties = reloadProperties(selectedTag)
+            PLUGIN_KEY = CONFIG.keys[pluginKeyID].plugin
+            properties = reloadProperties(selectedTag, pluginKeyID)
             showDialog()
           end
         }
