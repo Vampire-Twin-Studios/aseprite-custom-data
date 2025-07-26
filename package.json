@@ -1,7 +1,7 @@
 {
-  "name": "tag-data",
-  "displayName": "Tag Data",
-  "description": "A simple Aseprite plugin that lets you define custom data for tags.",
+  "name": "custom-data",
+  "displayName": "Custom Data",
+  "description": "A simple Aseprite plugin that lets you define custom data for supported objects (Cel, Frame, Layer, Slice, Tag).",
   "version": "1.0.0",
   "author": { "name": "Shervin Mortazavi",
               "email": "shervin.mortazavi@outlook.com",
@@ -12,7 +12,7 @@
   "categories": [ "Scripts" ],
   "contributes": {
     "scripts": [
-        { "path": "./tag-data.lua" }
+        { "path": "./custom-data.lua" }
     ]
   }
 }
