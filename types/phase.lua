@@ -1,8 +1,20 @@
--- order.lua
--- Enum type for order selection (0-10)
+-- phase.lua
+-- Enum type for phase selection (solo, 1-10). Handy for denoting phases in animation sequences.
 
 local M = {
-  options = { "0", "1", "2", "3", "4", "5", "6", "7", "8", "9", "10" }
+  options = {
+    "Solo",
+    "First",
+    "Second",
+    "Third",
+    "Fourth",
+    "Fifth",
+    "Sixth",
+    "Seventh",
+    "Eighth",
+    "Ninth",
+    "Tenth"
+  }
 }
 
 function M.draw(dlg, id, value, onchange)
