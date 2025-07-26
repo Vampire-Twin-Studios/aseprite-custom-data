@@ -112,6 +112,11 @@ local SUPPORTED_TYPES, TYPE_HELPERS = populateTypes()
 local function reloadProperties(object, objType, pluginKeyID)
   -- Load any defaults properties
   local kvRows = getPredefinedKeys(objType, pluginKeyID)
+  local keyIndex = {}
+  -- Build a lookup for quick replacement by key
+  for i, row in ipairs(kvRows) do
+    keyIndex[row.key] = i
+  end
 
   -- Then load any existing properties from the selected tag
   if object.properties(PLUGIN_KEY) then
@@ -125,7 +130,12 @@ local function reloadProperties(object, objType, pluginKeyID)
           break
         end
       end
-      table.insert(kvRows, { key = key, value = value, type = typeFound or "string" })
+      local entry = { key = key, value = value, type = typeFound or "string" }
+      if keyIndex[key] then
+        kvRows[keyIndex[key]] = entry -- Overwrite default with user value
+      else
+        table.insert(kvRows, entry)
+      end
     end
   end
   return kvRows
@@ -183,7 +193,7 @@ local function drawWindow(objType)
 
     -- Create a new dialog
     dlg = Dialog{
-      title = "Custom Tag Data",
+      title = "Custom " .. objType .. " Data",
       onclose = function()
         app.refresh()
       end
