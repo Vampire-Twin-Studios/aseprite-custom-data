@@ -7,7 +7,7 @@
 --=============================================================================
 
 local PLUGIN_KEY = ""
-local DEBUG = false
+local DEBUG = false 
 local PAGE_SIZE = 3
 local DEFAULT_DIALOG_WIDTH = 200
 local DEFAULT_DIALOG_HEIGHT = 350
