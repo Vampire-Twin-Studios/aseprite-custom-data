@@ -169,6 +169,27 @@ end
 
 --=============================================================================
 
+local function getPluginKeyMap(obj)
+  -- Get the predefined keys from the config
+  local keyMap = {}
+  for key, _ in pairs(CONFIG.keys) do
+    keyMap[key] = CONFIG.keys[key].plugin
+  end
+
+  -- Get any existing keys from the object
+  for key, _ in pairs(obj.properties) do
+    print("Found key:" .. key)
+    if not keyMap[key] then
+      print("Adding key:" .. key)
+      keyMap[key] = key
+    end
+  end
+
+  return keyMap
+end
+
+--=============================================================================
+
 local function drawWindow(objType)
 
   -- Get type key for ease
@@ -194,20 +215,14 @@ local function drawWindow(objType)
     table.insert(objectIDs, objectID)
     objectMap[objectID] = o
   end
-
-  -- Build plugin key options
-  local pluginKeyIDs = {}
-  for key, _ in pairs(CONFIG.keys) do
-    table.insert(pluginKeyIDs, key)
-  end
-  local pluginKeyID = CONFIG.defaultKeyID
-  PLUGIN_KEY = CONFIG.keys[pluginKeyID].plugin
-
+  
   -- Tracking variables for dialog state
   local lastDialogBounds = nil
   local dlg = nil
   local selectedTab = "page1"
+  local pluginKeyID = CONFIG.defaultKeyID
   local properties = reloadProperties(selectedObject, objType, pluginKeyID)
+  PLUGIN_KEY = CONFIG.keys[pluginKeyID].plugin
 
   local function showDialog()
     -- If dialogue already exists, close it, save bounds and selected tab
@@ -229,6 +244,13 @@ local function drawWindow(objType)
         app.refresh()
       end
     }
+
+    -- Refresh the plugin key map
+    local keyMap = getPluginKeyMap(selectedObject)
+    local pluginKeyIDs = {}
+    for key, _ in pairs(keyMap) do
+      table.insert(pluginKeyIDs, key)
+    end
 
     -- Object selection
     if objType == "Cel" then
