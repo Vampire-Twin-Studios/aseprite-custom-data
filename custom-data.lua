@@ -77,6 +77,23 @@ end
 
 --=============================================================================
 
+local function setAllProperties(object, key, properties, export)
+  local props = {}
+  clearProperties(object, key)
+  for _, row in ipairs(properties) do
+    if row.key and row.key ~= "" and row.value and row.value ~= "" then
+      setProperty(object, key, row.key, row.value)
+    end
+  end
+  app.command.SaveFile()
+  if export then
+    app.command.RepeatLastExport()
+  end
+  app.alert("Data saved!")
+end
+
+--=============================================================================
+
 local function deepcopy(orig)
   local orig_type = type(orig)
   local copy
@@ -377,15 +394,12 @@ local function drawWindow(objType)
       showDialog()
     end }
     dlg:button{ text = "Apply", onclick = function()
-      local props = {}
-      clearProperties(selectedObject, PLUGIN_KEY)
-      for _, row in ipairs(properties) do
-        if row.key and row.key ~= "" and row.value and row.value ~= "" then
-          setProperty(selectedObject, PLUGIN_KEY, row.key, row.value)
-        end
-      end
-      app.alert("Data saved!")
+      setAllProperties(selectedObject, PLUGIN_KEY, properties, false)
     end }
+    dlg:button{ text = "Apply + Export", onclick = function()
+      setAllProperties(selectedObject, PLUGIN_KEY, properties, true)
+    end }
+    
     dlg:label{ id = "info", label = "", text = string.rep(" ", 25), color = Color{ r=0, g=180, b=0 } }
     if (lastDialogBounds) then
       dlg.bounds = Rectangle(
