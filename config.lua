@@ -9,7 +9,8 @@ config.keys = {
     plugin = "",
     default_properties = {
       Tag = {
-        { key = "phase", type = "phase", value = "Solo" }
+        { key = "phase", type = "phase", value = "Solo" },
+        { key = "yield", type = "bool", value = false }
       }
     }
   }
