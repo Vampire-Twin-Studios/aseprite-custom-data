@@ -30,6 +30,16 @@ local OBJECT_ID_MAP = {
 -- HELPER FUNCTIONS
 --=============================================================================
 
+local function getField(obj, path)
+  for key in string.gmatch(path, "[^%.]+") do
+    if obj == nil then return nil end
+    obj = obj[key]
+  end
+  return obj
+end
+
+--=============================================================================
+
 local function getCustomObjectID(obj, objType)
   local typeIDKey = OBJECT_ID_MAP[objType]
   local objectID = ""
@@ -44,15 +54,6 @@ local function getCustomObjectID(obj, objType)
   return objectID
 end
 
---=============================================================================
-
-local function getField(obj, path)
-  for key in string.gmatch(path, "[^%.]+") do
-    if obj == nil then return nil end
-    obj = obj[key]
-  end
-  return obj
-end
 
 --=============================================================================
 

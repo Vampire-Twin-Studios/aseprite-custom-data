@@ -7,17 +7,13 @@ local config = {}
 config.keys = {
   Root = {
     plugin = "",
-    default_properties = {}
-  },
-  Animation = {
-    plugin = "animation",
     default_properties = {
       Tag = {
-        { key = "Phase", type = "phase", value = "Solo" }
+        { key = "phase", type = "phase", value = "Solo" }
       }
     }
   }
 }
-config.defaultKeyID = "Animation"
+config.defaultKeyID = "Root"
 
 return config
