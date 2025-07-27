@@ -20,14 +20,40 @@ local SUPPORTED_OBJECTS = {
   "Tag"
 }
 local OBJECT_ID_MAP = {
-  Cel = "frameNumber",
-  Layer = "name",
-  Slice = "name",
-  Tag = "name"
+  Cel = {"layer.name", "frameNumber"},
+  Layer = {"name"},
+  Slice = {"name"},
+  Tag = {"name"}
 }
 
 --=============================================================================
 -- HELPER FUNCTIONS
+--=============================================================================
+
+local function getCustomObjectID(obj, objType)
+  local typeIDKey = OBJECT_ID_MAP[objType]
+  local objectID = ""
+  local idParts = {}
+  for _, path in ipairs(typeIDKey) do
+    local fieldValue = getField(obj, path)
+    if fieldValue then
+      table.insert(idParts, tostring(fieldValue))
+    end
+  end
+  objectID = table.concat(idParts, '-')
+  return objectID
+end
+
+--=============================================================================
+
+local function getField(obj, path)
+  for key in string.gmatch(path, "[^%.]+") do
+    if obj == nil then return nil end
+    obj = obj[key]
+  end
+  return obj
+end
+
 --=============================================================================
 
 local function debugPrint(...)
@@ -147,7 +173,7 @@ local function drawWindow(objType)
 
   -- Get type key for ease
   local typeKey = string.lower(objType)
-  local typeIDKey = OBJECT_ID_MAP[objType]
+  
 
   -- Get the active object as the current selection
   local selectedObject = app[typeKey]
@@ -156,6 +182,7 @@ local function drawWindow(objType)
       app.alert("Can't define custom data on an empty cell!")
     else
       app.alert("No " .. objType .. " selected!")
+    end
     return
   end
   
@@ -163,8 +190,9 @@ local function drawWindow(objType)
   local objectIDs = {}
   local objectMap = {}
   for _, o in ipairs(app.sprite[typeKey.. 's'] ) do
-    table.insert(objectIDs, o[typeIDKey])
-    objectMap[o[typeIDKey]] = o
+    local objectID = getCustomObjectID(o, objType)
+    table.insert(objectIDs, objectID)
+    objectMap[objectID] = o
   end
 
   -- Build plugin key options
@@ -203,22 +231,61 @@ local function drawWindow(objType)
     }
 
     -- Object selection
-    dlg:combobox{
-      id = typeKey,
-      label = objType,
-      option = selectedObject[typeIDKey],
-      options = objectIDs,
-      onchange = function()
-        selectedObject = objectMap[dlg.data[typeKey]]
-        if (typeKey == "tag") then
-          local currentFrame = app.frame.frameNumber
-          if currentFrame < selectedObject.fromFrame.frameNumber or currentFrame > selectedObject.toFrame.frameNumber then
-            app.frame = selectedObject.fromFrame.frameNumber
-          end
+    if objType == "Cel" then
+      local layers = {}
+      local layersMap = {}
+      for _, layer in ipairs(app.sprite.layers) do
+        if #layer.cels > 0 then
+          table.insert(layers, layer.name)
+          layersMap[layer.name] = layer
         end
-        showDialog()
       end
-    }
+      local selectedObjectID = getCustomObjectID(selectedObject, objType)
+      local currentLayer = layersMap[selectedObjectID:match("^[^-]+")]
+      dlg:combobox{
+        id = "layer",
+        label = "Layer",
+        option = currentLayer.name,
+        options = layers,
+        onchange = function()
+          selectedObject = objectMap[dlg.data.layer .. '-' .. layersMap[dlg.data.layer].cels[1].frameNumber]
+          showDialog()
+        end
+      }
+      local frames = {}
+      local framesMap = {}
+      for _, cel in ipairs(currentLayer.cels) do
+        table.insert(frames, cel.frameNumber)
+        framesMap[cel.frameNumber] = cel.frame
+      end
+      dlg:combobox{
+        id = "frame",
+        label = "Frame",
+        option = selectedObjectID:match("^[^-]+%-([^-]+)"),
+        options = frames,
+        onchange = function()
+          selectedObject = objectMap[dlg.data.layer .. '-' .. dlg.data.frame]
+          showDialog()
+        end
+      }
+    else
+      dlg:combobox{
+        id = typeKey,
+        label = objType,
+        option = objectID,
+        options = objectIDs,
+        onchange = function()
+          selectedObject = objectMap[dlg.data[typeKey]]
+          if (typeKey == "tag") then
+            local currentFrame = app.frame.frameNumber
+            if currentFrame < selectedObject.fromFrame.frameNumber or currentFrame > selectedObject.toFrame.frameNumber then
+              app.frame = selectedObject.fromFrame.frameNumber
+            end
+          end
+          showDialog()
+        end
+      }
+    end
     
     -- Plugin key selection
     dlg:combobox{
