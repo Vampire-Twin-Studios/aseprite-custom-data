@@ -233,10 +233,16 @@ local function drawWindow(objType)
     -- Object selection
     if objType == "Cel" then
       local layers = {}
-      local layersMap = {}
       for _, layer in ipairs(app.sprite.layers) do
+        table.insert(layers, layer)
+      end
+      -- Sort layers by stackIndex (descending)
+      table.sort(layers, function(a, b) return a.stackIndex > b.stackIndex end)
+      local layerNames = {}
+      local layersMap = {}
+      for _, layer in ipairs(layers) do
         if #layer.cels > 0 then
-          table.insert(layers, layer.name)
+          table.insert(layerNames, layer.name)
           layersMap[layer.name] = layer
         end
       end
@@ -246,7 +252,7 @@ local function drawWindow(objType)
         id = "layer",
         label = "Layer",
         option = currentLayer.name,
-        options = layers,
+        options = layerNames,
         onchange = function()
           selectedObject = objectMap[dlg.data.layer .. '-' .. layersMap[dlg.data.layer].cels[1].frameNumber]
           showDialog()
@@ -371,9 +377,9 @@ local function drawWindow(objType)
     end }
     dlg:button{ text = "Apply", onclick = function()
       local props = {}
+      clearProperties(selectedObject, PLUGIN_KEY)
       for _, row in ipairs(properties) do
         if row.key and row.key ~= "" and row.value and row.value ~= "" then
-          clearProperties(selectedObject, PLUGIN_KEY)
           setProperty(selectedObject, PLUGIN_KEY, row.key, row.value)
         end
       end
