@@ -249,6 +249,7 @@ local function drawWindow(objType)
     }
 
     -- Object selection
+    local selectedObjectID = getCustomObjectID(selectedObject, objType)
     if objType == "Cel" then
       local layers = {}
       for _, layer in ipairs(app.sprite.layers) do
@@ -264,7 +265,6 @@ local function drawWindow(objType)
           layersMap[layer.name] = layer
         end
       end
-      local selectedObjectID = getCustomObjectID(selectedObject, objType)
       local currentLayer = layersMap[selectedObjectID:match("^[^-]+")]
       dlg:combobox{
         id = "layer",
@@ -273,6 +273,7 @@ local function drawWindow(objType)
         options = layerNames,
         onchange = function()
           selectedObject = objectMap[dlg.data.layer .. '-' .. layersMap[dlg.data.layer].cels[1].frameNumber]
+          properties = reloadProperties(selectedObject, objType, pluginKeyID)
           showDialog()
         end
       }
@@ -289,6 +290,7 @@ local function drawWindow(objType)
         options = frames,
         onchange = function()
           selectedObject = objectMap[dlg.data.layer .. '-' .. dlg.data.frame]
+          
           showDialog()
         end
       }
@@ -296,7 +298,7 @@ local function drawWindow(objType)
       dlg:combobox{
         id = typeKey,
         label = objType,
-        option = objectID,
+        option = selectedObjectID,
         options = objectIDs,
         onchange = function()
           selectedObject = objectMap[dlg.data[typeKey]]
@@ -306,6 +308,7 @@ local function drawWindow(objType)
               app.frame = selectedObject.fromFrame.frameNumber
             end
           end
+          properties = reloadProperties(selectedObject, objType, pluginKeyID)
           showDialog()
         end
       }
